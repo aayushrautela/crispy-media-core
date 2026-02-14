@@ -65,8 +65,8 @@ if (trakt) {
 
 ## Package Metadata
 
-- `repository`, `bugs`, and `homepage` in `package.json` currently use placeholders.
-- Replace `<your-org>` when moving this folder into the dedicated GitHub repository.
+- Repository: `https://github.com/aayushrautela/crispy-media-core`
+- npm: `https://www.npmjs.com/package/@crispy-streaming/media-core`
 
 ## Publish Preparation (for new repo)
 

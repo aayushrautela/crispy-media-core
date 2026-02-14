@@ -39,12 +39,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/crispy-streaming/media-core.git"
+    "url": "git+https://github.com/aayushrautela/crispy-media-core.git"
   },
   "bugs": {
-    "url": "https://github.com/crispy-streaming/media-core/issues"
+    "url": "https://github.com/aayushrautela/crispy-media-core/issues"
   },
-  "homepage": "https://github.com/crispy-streaming/media-core#readme",
+  "homepage": "https://github.com/aayushrautela/crispy-media-core#readme",
   "devDependencies": {
     "tsup": "^8.5.0",
     "typescript": "^5.9.2"
