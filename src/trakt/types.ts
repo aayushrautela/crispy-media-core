@@ -21,6 +21,13 @@ export interface TraktImages {
   thumb?: TraktImageVariant[];
 }
 
+export interface TraktMediaItem {
+  title: string;
+  year?: number;
+  ids: TraktIds;
+  images?: TraktImages;
+}
+
 export interface TraktMovie {
   title: string;
   year?: number;
