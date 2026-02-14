@@ -27,6 +27,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Use latest npm
+        run: npm install -g npm@latest
+
       - name: Clear npm auth (OIDC only)
         run: rm -f ~/.npmrc
 
