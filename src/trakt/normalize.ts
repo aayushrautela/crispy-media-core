@@ -1,5 +1,6 @@
 import { type EpisodeInfo, type ExternalIds, type ImageSet, type MediaType, type MediaCore } from '../domain/media';
-import { buildCanonicalId, mergeExternalIds, normalizeImdbId, normalizeMediaType } from '../ids/externalIds';
+import { mergeExternalIds, normalizeImdbId, normalizeMediaType } from '../ids/externalIds';
+import { buildCanonicalMediaId, mediaTypeToProviderKind } from '../ids/canonical';
 import { type TraktImages, type TraktWrappedItem } from './types';
 
 const HTTP_PATTERN = /^https?:\/\//i;
@@ -246,6 +247,8 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
   let status: string | undefined;
 
   let ids: ExternalIds = {};
+  let episodeIds: ExternalIds | undefined;
+  let showIds: ExternalIds | undefined;
   let images: ImageSet = {};
   let episodeInfo: EpisodeInfo | undefined;
   let showTitle: string | undefined;
@@ -254,7 +257,9 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
     traktType = 'episode';
     type = 'series';
 
-    ids = mergeExternalIds(extractIds(episode.ids), extractIds(show?.ids));
+    episodeIds = extractIds(episode.ids);
+    showIds = extractIds(show?.ids);
+    ids = mergeExternalIds(episodeIds, showIds);
 
     showTitle = show ? readString(show, 'title') : undefined;
     title = showTitle ?? readString(episode, 'title') ?? title;
@@ -309,7 +314,24 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
   }
 
   const fallbackId = showTitle ? `${title}:${showTitle}` : title;
-  const id = buildCanonicalId(ids, fallbackId) ?? fallbackId;
+  const providerKind = traktType === 'episode' ? 'episode' : mediaTypeToProviderKind(type);
+
+  let id: string = fallbackId;
+
+  if (traktType === 'episode') {
+    // Prefer episode-scoped ids; do not accidentally use show-scoped TMDB/IMDB ids.
+    const episodeCanonical = episodeIds ? buildCanonicalMediaId(episodeIds, 'episode') : null;
+    if (episodeCanonical) {
+      id = episodeCanonical;
+    } else if (showIds?.tmdb && episodeInfo) {
+      // Stable fallback when episode-scoped ids are missing: show id + season/episode context.
+      id = `tmdb:show:${showIds.tmdb}:${episodeInfo.season}:${episodeInfo.episode}`;
+    } else {
+      id = buildCanonicalMediaId(ids, providerKind, fallbackId) ?? fallbackId;
+    }
+  } else {
+    id = buildCanonicalMediaId(ids, providerKind, fallbackId) ?? fallbackId;
+  }
 
   const normalized: NormalizedTraktItem = {
     id,

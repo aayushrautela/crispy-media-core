@@ -1,5 +1,6 @@
 import type { MediaType } from '../domain/media';
 import { parseMediaIdInput } from '../ids/mediaId';
+import { mediaTypeToProviderKind } from '../ids/canonical';
 
 export interface ResolveTmdbIdOptions {
   apiKey: string;
@@ -33,8 +34,8 @@ function toPositiveInt(value: unknown): number | null {
 
 /**
  * Resolves a TMDB numeric id from various inputs:
- * - `tmdb:<id>` (with optional `:<season>:<episode>` suffix)
- * - raw numeric strings
+ * - `tmdb:movie:<id>` or `tmdb:show:<id>` (with optional `:<season>:<episode>` suffix)
+ * - legacy `tmdb:<id>`
  * - IMDB ids (`tt123...` / `imdb:tt123...` / `imdb:123...`)
  */
 export async function resolveTmdbId(input: string | number, type: MediaType, options: ResolveTmdbIdOptions): Promise<{ tmdbId: number | null; imdbId?: string }>{
@@ -43,7 +44,19 @@ export async function resolveTmdbId(input: string | number, type: MediaType, opt
     throw new TmdbResolveError('Missing TMDB apiKey');
   }
 
-  const parsed = parseMediaIdInput(input);
+  // Strict parsing: bare numeric inputs are NOT assumed to be TMDB.
+  // Callers must pass `tmdb:movie:<id>` / `tmdb:show:<id>` (or an IMDB id) to resolve.
+  const parsed = parseMediaIdInput(input, { assumeNumeric: 'none' });
+
+  const expectedKind = mediaTypeToProviderKind(type);
+  if (parsed.kind && parsed.kind !== expectedKind) {
+    return { tmdbId: null };
+  }
+
+  // If a different provider is explicitly specified, do not attempt TMDB resolution.
+  if (parsed.provider && parsed.provider !== 'tmdb' && parsed.provider !== 'imdb') {
+    return { tmdbId: null };
+  }
 
   if (parsed.ids.tmdb) {
     const result: { tmdbId: number | null; imdbId?: string } = { tmdbId: parsed.ids.tmdb };

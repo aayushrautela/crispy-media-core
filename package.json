@@ -1,6 +1,6 @@
 {
   "name": "@crispy-streaming/media-core",
-  "version": "0.1.2",
+  "version": "0.3.0",
   "description": "Platform-agnostic TMDB/Trakt types, ID helpers, and parsers for Crispy clients",
   "license": "MIT",
   "type": "module",
@@ -25,6 +25,8 @@
     "clean": "rm -rf dist",
     "build": "npm run clean && tsup src/index.ts --format esm,cjs --dts --sourcemap",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepack": "npm run build"
   },
   "publishConfig": {
@@ -47,6 +49,7 @@
   "homepage": "https://github.com/aayushrautela/crispy-media-core#readme",
   "devDependencies": {
     "tsup": "^8.5.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }

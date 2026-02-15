@@ -2,9 +2,21 @@ import { type ExternalIds, type MediaType } from '../domain/media';
 
 const TMDB_PREFIX = 'tmdb:';
 const TRAKT_PREFIX = 'trakt:';
+const TVDB_PREFIX = 'tvdb:';
+const SIMKL_PREFIX = 'simkl:';
 const IMDB_PREFIX = 'imdb:';
 const IMDB_PATTERN = /^tt\d+$/i;
 const NUMERIC_PATTERN = /^\d+$/;
+
+export type NumericIdAssumption = 'none' | 'tmdb' | 'trakt' | 'tvdb' | 'simkl';
+
+export interface ParseExternalIdOptions {
+  /**
+   * Controls how to interpret bare numeric inputs (e.g. `"123"` or `123`).
+   * Production default is strict (`'none'`) to avoid mixing providers.
+   */
+  assumeNumeric?: NumericIdAssumption;
+}
 
 function toPositiveInteger(value: string): number | undefined {
   if (!NUMERIC_PATTERN.test(value)) {
@@ -45,8 +57,11 @@ export function normalizeImdbId(value: string | null | undefined): string | unde
   }
 
   if (normalized.startsWith(IMDB_PREFIX)) {
-    const candidate = normalized.slice(IMDB_PREFIX.length).trim();
-    return IMDB_PATTERN.test(candidate) ? candidate : undefined;
+    const remainder = normalized.slice(IMDB_PREFIX.length).trim();
+    // Support both `imdb:tt123` and typed forms like `imdb:movie:tt123`.
+    const parts = remainder.split(':').map((part) => part.trim()).filter(Boolean);
+    const candidate = parts.length >= 2 ? parts[1] : parts[0];
+    return candidate && IMDB_PATTERN.test(candidate) ? candidate : undefined;
   }
 
   if (normalized.startsWith('tt') && NUMERIC_PATTERN.test(normalized.slice(2))) {
@@ -56,9 +71,46 @@ export function normalizeImdbId(value: string | null | undefined): string | unde
   return undefined;
 }
 
-export function parseExternalId(input: string | number): ExternalIds {
+function isKindToken(token: string): boolean {
+  // Keep this intentionally permissive; kinds exist to disambiguate ids across apps.
+  return token === 'movie' || token === 'show' || token === 'episode' || token === 'tv' || token === 'series';
+}
+
+function extractPrefixedNumericId(remainder: string): number | undefined {
+  const parts = remainder.split(':').map((part) => part.trim()).filter(Boolean);
+  const first = parts[0] ?? '';
+  const second = parts[1] ?? '';
+
+  const direct = toPositiveInteger(first);
+  if (direct) {
+    return direct;
+  }
+
+  if (isKindToken(first)) {
+    return toPositiveInteger(second);
+  }
+
+  return undefined;
+}
+
+function parseNumericAsProvider(n: number, assume: NumericIdAssumption): ExternalIds {
+  const value = Math.trunc(n);
+  if (!Number.isFinite(value) || value <= 0) {
+    return {};
+  }
+
+  if (assume === 'tmdb') return { tmdb: value };
+  if (assume === 'trakt') return { trakt: value };
+  if (assume === 'tvdb') return { tvdb: value };
+  if (assume === 'simkl') return { simkl: value };
+  return {};
+}
+
+export function parseExternalId(input: string | number, options: ParseExternalIdOptions = {}): ExternalIds {
+  const assumeNumeric: NumericIdAssumption = options.assumeNumeric ?? 'none';
+
   if (typeof input === 'number') {
-    return Number.isFinite(input) && input > 0 ? { tmdb: Math.trunc(input) } : {};
+    return parseNumericAsProvider(input, assumeNumeric);
   }
 
   const value = input.trim();
@@ -70,15 +122,27 @@ export function parseExternalId(input: string | number): ExternalIds {
   const lowered = value.toLowerCase();
 
   if (lowered.startsWith(TMDB_PREFIX)) {
-    const token = lowered.slice(TMDB_PREFIX.length).split(':')[0] ?? '';
-    const tmdb = toPositiveInteger(token);
+    const remainder = lowered.slice(TMDB_PREFIX.length);
+    const tmdb = extractPrefixedNumericId(remainder);
     return tmdb ? { tmdb } : {};
   }
 
   if (lowered.startsWith(TRAKT_PREFIX)) {
-    const token = lowered.slice(TRAKT_PREFIX.length).split(':')[0] ?? '';
-    const trakt = toPositiveInteger(token);
+    const remainder = lowered.slice(TRAKT_PREFIX.length);
+    const trakt = extractPrefixedNumericId(remainder);
     return trakt ? { trakt } : {};
+  }
+
+  if (lowered.startsWith(TVDB_PREFIX)) {
+    const remainder = lowered.slice(TVDB_PREFIX.length);
+    const tvdb = extractPrefixedNumericId(remainder);
+    return tvdb ? { tvdb } : {};
+  }
+
+  if (lowered.startsWith(SIMKL_PREFIX)) {
+    const remainder = lowered.slice(SIMKL_PREFIX.length);
+    const simkl = extractPrefixedNumericId(remainder);
+    return simkl ? { simkl } : {};
   }
 
   const imdb = normalizeImdbId(lowered);
@@ -87,11 +151,19 @@ export function parseExternalId(input: string | number): ExternalIds {
   }
 
   if (NUMERIC_PATTERN.test(lowered)) {
-    const tmdb = toPositiveInteger(lowered);
-    return tmdb ? { tmdb } : {};
+    const numeric = toPositiveInteger(lowered);
+    return numeric ? parseNumericAsProvider(numeric, assumeNumeric) : {};
   }
 
   return {};
+}
+
+/**
+ * Legacy behavior: treats bare numeric inputs as TMDB ids.
+ * Prefer `parseExternalId(input)` (strict) in new code.
+ */
+export function parseExternalIdLegacy(input: string | number): ExternalIds {
+  return parseExternalId(input, { assumeNumeric: 'tmdb' });
 }
 
 export function mergeExternalIds(...sources: ExternalIds[]): ExternalIds {
@@ -106,6 +178,9 @@ export function mergeExternalIds(...sources: ExternalIds[]): ExternalIds {
     }
     if (!merged.tvdb && ids.tvdb) {
       merged.tvdb = ids.tvdb;
+    }
+    if (!merged.simkl && ids.simkl) {
+      merged.simkl = ids.simkl;
     }
     if (!merged.imdb && ids.imdb) {
       merged.imdb = ids.imdb;
@@ -129,6 +204,14 @@ export function buildCanonicalId(ids: ExternalIds, fallback?: string): string | 
 
   if (ids.trakt) {
     return `trakt:${ids.trakt}`;
+  }
+
+  if (ids.tvdb) {
+    return `tvdb:${ids.tvdb}`;
+  }
+
+  if (ids.simkl) {
+    return `simkl:${ids.simkl}`;
   }
 
   if (!fallback) {

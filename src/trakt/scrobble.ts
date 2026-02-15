@@ -7,15 +7,16 @@ export type TraktIdsObject = TraktIds;
 
 export function buildWatchingKey(type: WatchingKeyType, id: string | number, season?: number, episode?: number): string {
   const normalizedId = normalizeIdForKey(id);
+  const baseId = parseEpisodeIdSuffix(normalizedId).baseId;
 
   if (type === 'series') {
     if (typeof season === 'number' && typeof episode === 'number' && season > 0 && episode > 0) {
-      return `episode:${normalizedId}:${season}:${episode}`;
+      return `episode:${baseId}:${season}:${episode}`;
     }
-    return `episode:${normalizedId}`;
+    return `episode:${baseId}`;
   }
 
-  return `movie:${normalizedId}`;
+  return `movie:${baseId}`;
 }
 
 export function getTraktIdsObject(id: string | number): TraktIdsObject {

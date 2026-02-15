@@ -30,6 +30,43 @@ This package intentionally excludes:
 - `src/tmdb/*`: TMDB contracts + normalizers
 - `src/trakt/*`: Trakt contracts + normalizers
 
+## Strict ID parsing (recommended)
+
+By default, bare numeric inputs like `"123"` or `123` are treated as **unknown** (not assumed to be TMDB/Trakt/TVDB/SIMKL). This avoids mixing provider namespaces across apps.
+
+Use explicit, typed IDs:
+
+```txt
+tmdb:movie:550
+tmdb:show:1399
+trakt:movie:1
+trakt:show:1
+tvdb:show:121361
+simkl:movie:12345
+imdb:movie:tt0137523
+imdb:show:tt0944947
+```
+
+If you need legacy behavior (bare numeric = TMDB), use `parseExternalIdLegacy()` / `parseMediaIdInputLegacy()`.
+
+## Provider routing
+
+For cross-provider enrichment (Trakt -> TMDB today, TVDB/SIMKL later), use the router and register resolver/enricher plugins in your app:
+
+```ts
+import { createImdbToTmdbResolver, createMediaRouter } from '@crispy-streaming/media-core';
+
+const router = createMediaRouter({
+  resolvers: [createImdbToTmdbResolver({ apiKey: process.env.TMDB_API_KEY! })],
+  enrichers: [
+    // app-provided enrichers for tmdb/trakt/tvdb/simkl
+  ],
+});
+
+// strict input format (preferred):
+// router.enrich('tmdb', 'imdb:movie:tt0137523')
+```
+
 ## Scripts
 
 - `npm run typecheck`
