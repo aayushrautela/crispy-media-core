@@ -1,6 +1,6 @@
 {
   "name": "@crispy-streaming/media-core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Platform-agnostic TMDB/Trakt types, ID helpers, and parsers for Crispy clients",
   "license": "MIT",
   "type": "module",

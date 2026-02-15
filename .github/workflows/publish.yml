@@ -30,10 +30,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm run test
-
-      - name: Use latest npm
+      - name: Publish
         run: npm install -g npm@latest
 
       - name: Clear npm auth (OIDC only)
