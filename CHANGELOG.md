@@ -25,6 +25,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - `tvdb:` and `simkl:` id prefix parsing.
 - `parseExternalIdLegacy()` and `parseMediaIdInputLegacy()` for legacy numeric-as-TMDB behavior.
 
+## [0.3.2] - 2026-02-16
+
+### Fixed
+
+- Trakt image URLs under `/images/...` are now resolved against `https://walter.trakt.tv` (instead of TMDB).
+
+### Added
+
+- `formatIdForIdPrefixes()` helper for selecting Stremio addon-compatible IDs using `idPrefixes`.
+
 ## [0.3.0] - 2026-02-15
 
 ### Changed

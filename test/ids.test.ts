@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildCanonicalMediaId,
+  formatIdForIdPrefixes,
   normalizeImdbId,
   parseExternalId,
   parseExternalIdLegacy,
@@ -38,5 +39,13 @@ describe('ids', () => {
     expect(buildCanonicalMediaId({ tmdb: 1 }, 'show')).toBe('tmdb:show:1');
     expect(buildCanonicalMediaId({ trakt: 2, tmdb: 1 }, 'movie')).toBe('tmdb:movie:1');
     expect(buildCanonicalMediaId({ imdb: 'tt0137523', tmdb: 1 }, 'movie')).toBe('imdb:movie:tt0137523');
+  });
+
+  it('formats ids for addon idPrefixes', () => {
+    expect(formatIdForIdPrefixes('imdb:movie:tt0137523', 'movie', ['tt'])).toBe('tt0137523');
+    expect(formatIdForIdPrefixes('imdb:show:tt0944947:1:2', 'series', ['tt'])).toBe('tt0944947:1:2');
+    expect(formatIdForIdPrefixes('tmdb:show:1399:1:2', 'series', ['tmdb:'])).toBe('tmdb:1399:1:2');
+    expect(formatIdForIdPrefixes('1399', 'series', ['tmdb:'])).toBe('tmdb:1399');
+    expect(formatIdForIdPrefixes('imdb:movie:tt0137523', 'movie')).toBe('tt0137523');
   });
 });

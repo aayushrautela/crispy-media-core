@@ -4,6 +4,7 @@ export * from './ids/providerRef';
 export * from './ids/mediaId';
 export * from './ids/canonical';
 export * from './ids/coerce';
+export * from './ids/idPrefixes';
 export * from './tmdb/types';
 export * from './tmdb/normalize';
 export * from './tmdb/resolve';

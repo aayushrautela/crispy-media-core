@@ -4,6 +4,7 @@ import { buildCanonicalMediaId, mediaTypeToProviderKind } from '../ids/canonical
 import { type TraktImages, type TraktWrappedItem } from './types';
 
 const HTTP_PATTERN = /^https?:\/\//i;
+const TRAKT_WALTER_BASE_URL = 'https://walter.trakt.tv';
 
 export interface NormalizedTraktItem extends MediaCore {
   traktType: 'movie' | 'show' | 'episode';
@@ -42,6 +43,10 @@ function normalizeImageUrl(value: string | undefined): string | undefined {
 
   if (value.startsWith('/http')) {
     return `https:${value.slice(1)}`;
+  }
+
+  if (value.startsWith('/images')) {
+    return `${TRAKT_WALTER_BASE_URL}${value}`;
   }
 
   if (value.startsWith('/')) {
