@@ -158,14 +158,6 @@ export function parseExternalId(input: string | number, options: ParseExternalId
   return {};
 }
 
-/**
- * Legacy behavior: treats bare numeric inputs as TMDB ids.
- * Prefer `parseExternalId(input)` (strict) in new code.
- */
-export function parseExternalIdLegacy(input: string | number): ExternalIds {
-  return parseExternalId(input, { assumeNumeric: 'tmdb' });
-}
-
 export function mergeExternalIds(...sources: ExternalIds[]): ExternalIds {
   const merged: ExternalIds = {};
 

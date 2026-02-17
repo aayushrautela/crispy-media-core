@@ -1,5 +1,5 @@
 import { type EpisodeInfo, type ExternalIds, type ImageSet, type MediaType, type MediaCore } from '../domain/media';
-import { mergeExternalIds, normalizeImdbId, normalizeMediaType } from '../ids/externalIds';
+import { normalizeImdbId, normalizeMediaType } from '../ids/externalIds';
 import { buildCanonicalMediaId, mediaTypeToProviderKind } from '../ids/canonical';
 import { type TraktImages, type TraktWrappedItem } from './types';
 
@@ -12,6 +12,11 @@ export interface NormalizedTraktItem extends MediaCore {
   pausedAt?: string;
   episode?: EpisodeInfo;
   showTitle?: string;
+
+  /** Show-level ids when the source is an episode item. */
+  showIds?: ExternalIds;
+  /** Episode-level ids when the source is an episode item. */
+  episodeIds?: ExternalIds;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -201,37 +206,6 @@ function extractEpisodeInfo(episode: Record<string, unknown> | null): EpisodeInf
   return details;
 }
 
-function mergeImageSets(primary: ImageSet, secondary: ImageSet): ImageSet {
-  const merged: ImageSet = {};
-
-  const poster = primary.poster ?? secondary.poster;
-  if (poster) {
-    merged.poster = poster;
-  }
-
-  const backdrop = primary.backdrop ?? secondary.backdrop;
-  if (backdrop) {
-    merged.backdrop = backdrop;
-  }
-
-  const logo = primary.logo ?? secondary.logo;
-  if (logo) {
-    merged.logo = logo;
-  }
-
-  const fanart = primary.fanart ?? secondary.fanart;
-  if (fanart) {
-    merged.fanart = fanart;
-  }
-
-  const thumbnail = primary.thumbnail ?? secondary.thumbnail;
-  if (thumbnail) {
-    merged.thumbnail = thumbnail;
-  }
-
-  return merged;
-}
-
 export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem | null {
   const source = asRecord(input);
   if (!source) {
@@ -264,7 +238,11 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
 
     episodeIds = extractIds(episode.ids);
     showIds = extractIds(show?.ids);
-    ids = mergeExternalIds(episodeIds, showIds);
+
+    // IMPORTANT: For episode items we keep `ids` as show-level ids.
+    // Trakt may include episode-scoped TMDB/IMDb ids; using them at the top-level
+    // leads to incorrect lookups (e.g. treating episode tmdb id as show tmdb id).
+    ids = showIds;
 
     showTitle = show ? readString(show, 'title') : undefined;
     title = showTitle ?? readString(episode, 'title') ?? title;
@@ -276,7 +254,14 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
 
     const episodeImages = extractImages(episode.images as TraktImages | undefined);
     const showImages = extractImages(show?.images as TraktImages | undefined);
-    images = mergeImageSets(episodeImages, showImages);
+
+    // Keep show artwork stable; attach episode screenshot as thumbnail when available.
+    images = showImages;
+    const thumbnail = episodeImages.thumbnail ?? showImages.thumbnail;
+    if (thumbnail) {
+      images.thumbnail = thumbnail;
+    }
+
     episodeInfo = extractEpisodeInfo(episode);
   } else if (show) {
     traktType = 'show';
@@ -318,21 +303,21 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
     images = extractImages(source.images as TraktImages | undefined);
   }
 
-  const fallbackId = showTitle ? `${title}:${showTitle}` : title;
-  const providerKind = traktType === 'episode' ? 'episode' : mediaTypeToProviderKind(type);
+  const fallbackId = showTitle && title !== showTitle ? `${title}:${showTitle}` : title;
+  const providerKind = mediaTypeToProviderKind(type);
 
   let id: string = fallbackId;
 
   if (traktType === 'episode') {
-    // Prefer episode-scoped ids; do not accidentally use show-scoped TMDB/IMDB ids.
-    const episodeCanonical = episodeIds ? buildCanonicalMediaId(episodeIds, 'episode') : null;
-    if (episodeCanonical) {
-      id = episodeCanonical;
-    } else if (showIds?.tmdb && episodeInfo) {
-      // Stable fallback when episode-scoped ids are missing: show id + season/episode context.
-      id = `tmdb:show:${showIds.tmdb}:${episodeInfo.season}:${episodeInfo.episode}`;
+    const showCanonical = buildCanonicalMediaId(showIds ?? {}, providerKind, fallbackId);
+
+    if (showCanonical && episodeInfo) {
+      id = `${showCanonical}:${episodeInfo.season}:${episodeInfo.episode}`;
+    } else if (showCanonical) {
+      id = showCanonical;
     } else {
-      id = buildCanonicalMediaId(ids, providerKind, fallbackId) ?? fallbackId;
+      // Last resort: fall back to episode-scoped ids (if the show is unavailable).
+      id = (episodeIds ? buildCanonicalMediaId(episodeIds, 'episode', fallbackId) : null) ?? fallbackId;
     }
   } else {
     id = buildCanonicalMediaId(ids, providerKind, fallbackId) ?? fallbackId;
@@ -388,6 +373,14 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
 
   if (showTitle) {
     normalized.showTitle = showTitle;
+  }
+
+  if (showIds) {
+    normalized.showIds = showIds;
+  }
+
+  if (episodeIds) {
+    normalized.episodeIds = episodeIds;
   }
 
   return normalized;

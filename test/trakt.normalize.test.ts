@@ -38,4 +38,45 @@ describe('trakt normalize', () => {
 
     expect(normalized?.images.poster).toBe('https://walter.trakt.tv/images/posters/test.jpg');
   });
+
+  it('keeps episode items show-scoped ids and show artwork', () => {
+    const normalized = normalizeTraktItem({
+      progress: 12.5,
+      paused_at: '2020-01-01T00:00:00.000Z',
+      episode: {
+        season: 1,
+        number: 2,
+        title: 'Pilot (Part 2)',
+        ids: { trakt: 999, tmdb: 6698721 },
+        images: { thumb: { full: '/images/thumbs/episode.jpg' } },
+      },
+      show: {
+        title: 'Test Show',
+        year: 2020,
+        ids: { trakt: 123, tmdb: 424242 },
+        images: {
+          poster: { full: '/images/posters/show.jpg' },
+          fanart: { full: '/images/fanart/show.jpg' },
+          logo: { full: '/images/logos/show.png' },
+        },
+      },
+    } as any);
+
+    expect(normalized?.traktType).toBe('episode');
+    expect(normalized?.type).toBe('series');
+
+    // Episode items should be keyed by show id + episode context.
+    expect(normalized?.id).toBe('tmdb:show:424242:1:2');
+
+    // Top-level ids are show-scoped (stable across episodes).
+    expect(normalized?.ids).toEqual({ trakt: 123, tmdb: 424242 });
+    expect((normalized as any)?.showIds).toEqual({ trakt: 123, tmdb: 424242 });
+    expect((normalized as any)?.episodeIds).toEqual({ trakt: 999, tmdb: 6698721 });
+
+    // Keep show artwork stable; episode screenshot is attached as thumbnail.
+    expect(normalized?.images.poster).toBe('https://walter.trakt.tv/images/posters/show.jpg');
+    expect(normalized?.images.backdrop).toBe('https://walter.trakt.tv/images/fanart/show.jpg');
+    expect(normalized?.images.logo).toBe('https://walter.trakt.tv/images/logos/show.png');
+    expect(normalized?.images.thumbnail).toBe('https://walter.trakt.tv/images/thumbs/episode.jpg');
+  });
 });

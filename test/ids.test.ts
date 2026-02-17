@@ -5,7 +5,6 @@ import {
   formatIdForIdPrefixes,
   normalizeImdbId,
   parseExternalId,
-  parseExternalIdLegacy,
   parseProviderRefLoose,
   parseProviderRefStrict,
 } from '../src/index';
@@ -31,8 +30,7 @@ describe('ids', () => {
   it('strict parsing does not assume numeric provider', () => {
     expect(parseExternalId('550')).toEqual({});
     expect(parseExternalId(550)).toEqual({});
-    expect(parseExternalIdLegacy('550')).toEqual({ tmdb: 550 });
-    expect(parseExternalIdLegacy(550)).toEqual({ tmdb: 550 });
+    expect(parseExternalId('tmdb:550')).toEqual({ tmdb: 550 });
   });
 
   it('builds typed canonical ids', () => {

@@ -47,7 +47,7 @@ imdb:movie:tt0137523
 imdb:show:tt0944947
 ```
 
-If you need legacy behavior (bare numeric = TMDB), use `parseExternalIdLegacy()` / `parseMediaIdInputLegacy()`.
+This package intentionally does not support "bare numeric = TMDB" behavior. Always prefix provider ids (e.g. `tmdb:movie:550`).
 
 ## Provider routing
 

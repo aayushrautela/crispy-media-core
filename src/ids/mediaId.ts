@@ -156,18 +156,3 @@ export function normalizeIdForKeyWithOptions(id: string | number, options: Parse
   const parsed = parseMediaIdInput(id, options);
   return parsed.canonicalId || parsed.baseId;
 }
-
-/**
- * Legacy behavior: treats bare numeric inputs as TMDB ids.
- */
-export function normalizeIdForKeyLegacy(id: string | number): string {
-  return normalizeIdForKeyWithOptions(id, { assumeNumeric: 'tmdb' });
-}
-
-/**
- * Legacy behavior: treats bare numeric inputs as TMDB ids.
- * Prefer `parseMediaIdInput(input)` (strict) in new code.
- */
-export function parseMediaIdInputLegacy(input: string | number): ParsedMediaIdInput {
-  return parseMediaIdInput(input, { assumeNumeric: 'tmdb' });
-}

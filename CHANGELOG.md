@@ -14,16 +14,17 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Trakt normalization contracts and parser.
 - External ID parsing, media-type normalization, and canonical ID helpers.
 
-## [0.2.0] - 2026-02-15
+## [0.4.0] - 2026-02-17
+
+### Fixed
+
+- Trakt episode normalization now keeps show-scoped IDs at the top level (avoids treating episode-scoped IDs as show IDs).
+- Episode items now expose `showIds` and `episodeIds` for consumers that need both.
+- Episode items keep show artwork stable and attach episode screenshots as `images.thumbnail` when available.
 
 ### Changed
 
-- BREAKING: strict ID parsing by default; bare numeric inputs are no longer assumed to be TMDB.
-
-### Added
-
-- `tvdb:` and `simkl:` id prefix parsing.
-- `parseExternalIdLegacy()` and `parseMediaIdInputLegacy()` for legacy numeric-as-TMDB behavior.
+- BREAKING: removed legacy "bare numeric = TMDB" helpers: `parseExternalIdLegacy()`, `parseMediaIdInputLegacy()`, `normalizeIdForKeyLegacy()`.
 
 ## [0.3.2] - 2026-02-16
 
@@ -49,3 +50,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Provider router: `createMediaRouter()` with pluggable `ProviderResolver` and `ProviderEnricher`.
 - TMDB resolver edge: `createImdbToTmdbResolver()` (IMDB -> TMDB via `/find`).
 - Coercion helpers for migration: `coerceProviderRef()` and `coerceProviderRefFromMediaType()`.
+
+## [0.2.0] - 2026-02-15
+
+### Changed
+
+- BREAKING: strict ID parsing by default; bare numeric inputs are no longer assumed to be TMDB.
+
+### Added
+
+- `tvdb:` and `simkl:` id prefix parsing.
+- `parseExternalIdLegacy()` and `parseMediaIdInputLegacy()` for legacy numeric-as-TMDB behavior.
