@@ -1,11 +1,8 @@
-import { buildCanonicalId, mergeExternalIds, parseExternalId, type NumericIdAssumption } from './externalIds';
 import type { ExternalIds } from '../domain/media';
-import { formatProviderRef, parseProviderRefLoose, type ProviderKind, type ProviderName } from './providerRef';
 
-function parsePositiveInt(value: string): number | undefined {
-  const n = Number.parseInt(value, 10);
-  return Number.isFinite(n) && n > 0 ? n : undefined;
-}
+import { buildCanonicalId, mergeExternalIds, parseExternalId, type NumericIdAssumption } from './externalIds';
+import { parseEpisodeIdSuffix } from '../stremio/id';
+import { parseProviderRefLoose, type ProviderKind, type ProviderName } from './providerRef';
 
 /**
  * Loose IMDB normalization used when inputs are messy (e.g. imdb:123 or 123).
@@ -25,34 +22,7 @@ export function normalizeImdbIdLoose(value: string | null | undefined): string |
   return undefined;
 }
 
-export interface EpisodeIdSuffix {
-  baseId: string;
-  season?: number;
-  episode?: number;
-}
-
-/**
- * Parses IDs like `tmdb:123:1:2` or `tt1234567:1:2` into base id + season/episode.
- */
-export function parseEpisodeIdSuffix(id: string): EpisodeIdSuffix {
-  const raw = id.trim();
-  if (!raw) return { baseId: id };
-
-  const parts = raw.split(':');
-  if (parts.length < 3) return { baseId: raw };
-
-  const last = parts[parts.length - 1] ?? '';
-  const secondLast = parts[parts.length - 2] ?? '';
-
-  const episode = parsePositiveInt(last);
-  const season = parsePositiveInt(secondLast);
-  if (!season || !episode) return { baseId: raw };
-
-  const baseId = parts.slice(0, -2).join(':');
-  if (!baseId) return { baseId: raw };
-
-  return { baseId, season, episode };
-}
+export { parseEpisodeIdSuffix, type EpisodeIdSuffix } from '../stremio/id';
 
 export interface ParsedMediaIdInput {
   raw: string | number;
@@ -71,6 +41,13 @@ export interface ParseMediaIdOptions {
    * Default is strict ('none') for cross-app safety.
    */
   assumeNumeric?: NumericIdAssumption;
+
+  /**
+   * Enables a very permissive IMDb normalization for messy inputs.
+   *
+   * Disabled by default to avoid accidentally treating arbitrary numerics as IMDb IDs.
+   */
+  looseImdb?: boolean;
 }
 
 /**
@@ -84,11 +61,12 @@ export function parseMediaIdInput(input: string | number, options: ParseMediaIdO
 
   if (typeof input === 'number') {
     const ids = parseExternalId(input, { assumeNumeric });
+    const baseId = String(input);
     return {
       raw: input,
-      baseId: String(input),
+      baseId,
       ids,
-      canonicalId: buildCanonicalId(ids, ids.tmdb ? `tmdb:${ids.tmdb}` : undefined),
+      canonicalId: buildCanonicalId(ids, ids.tmdb ? `tmdb:${ids.tmdb}` : undefined) ?? baseId,
     };
   }
 
@@ -97,23 +75,20 @@ export function parseMediaIdInput(input: string | number, options: ParseMediaIdO
   const baseId = parsedSuffix.baseId.trim();
 
   const strictIds = parseExternalId(baseId, { assumeNumeric });
-  const looseImdb = strictIds.imdb ? undefined : normalizeImdbIdLoose(baseId);
+  const looseImdb = options.looseImdb && !strictIds.imdb ? normalizeImdbIdLoose(baseId) : undefined;
 
-  const ids = mergeExternalIds(strictIds, looseImdb ? { imdb: looseImdb } : {});
+  const ids: ExternalIds = mergeExternalIds(strictIds, looseImdb ? { imdb: looseImdb } : {});
 
   const looseProviderRef = parseProviderRefLoose(baseId);
-  const canonicalBaseProviderId = (() => {
-    if (!looseProviderRef) return null;
-    if (!looseProviderRef.kind) return null;
-    // Only treat fully typed ids as canonical keys.
-    if (looseProviderRef.provider === 'imdb') {
-      return formatProviderRef({ provider: 'imdb', kind: looseProviderRef.kind, id: String(looseProviderRef.id) });
+
+  const canonicalBaseId = buildCanonicalId(ids, baseId);
+  const canonicalId = (() => {
+    if (!canonicalBaseId) return null;
+    if (typeof parsedSuffix.season === 'number' && typeof parsedSuffix.episode === 'number') {
+      return `${canonicalBaseId}:${parsedSuffix.season}:${parsedSuffix.episode}`;
     }
-
-    return formatProviderRef({ provider: looseProviderRef.provider, kind: looseProviderRef.kind, id: Number(looseProviderRef.id) });
+    return canonicalBaseId;
   })();
-
-  const canonicalId = canonicalBaseProviderId ?? buildCanonicalId(ids, baseId);
 
   const result: ParsedMediaIdInput = {
     raw: input,
@@ -134,11 +109,6 @@ export function parseMediaIdInput(input: string | number, options: ParseMediaIdO
   }
   if (looseProviderRef?.kind) {
     result.kind = looseProviderRef.kind;
-  }
-
-  // If we had a fully typed provider id, preserve episode suffix in canonical form.
-  if (canonicalBaseProviderId && typeof result.season === 'number' && typeof result.episode === 'number') {
-    result.canonicalId = `${canonicalBaseProviderId}:${result.season}:${result.episode}`;
   }
 
   return result;

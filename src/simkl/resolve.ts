@@ -1,6 +1,6 @@
 import type { MediaType } from '../domain/media';
 import { parseMediaIdInput } from '../ids/mediaId';
-import { mediaTypeToProviderKind } from '../ids/canonical';
+import { mediaTypeToProviderKind } from '../ids/providerRef';
 import { normalizeImdbId } from '../ids/externalIds';
 import type { SimklItemType } from './types';
 

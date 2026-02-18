@@ -1,6 +1,5 @@
 import { type EpisodeInfo, type ExternalIds, type ImageSet, type MediaCore, type MediaType } from '../domain/media';
-import { normalizeImdbId } from '../ids/externalIds';
-import { buildCanonicalMediaId, mediaTypeToProviderKind } from '../ids/canonical';
+import { buildCanonicalId, normalizeImdbId } from '../ids/externalIds';
 import type { SimklIdsRaw, SimklItemType } from './types';
 import { buildSimklFanartUrl, buildSimklFanartUrls, buildSimklPosterUrl, buildSimklPosterUrls } from './images';
 
@@ -247,9 +246,8 @@ export function normalizeSimklItem(input: unknown): NormalizedSimklItem | null {
   }
 
   const fallbackId = showTitle && title !== showTitle ? `${title}:${showTitle}` : title;
-  const providerKind = mediaTypeToProviderKind(type);
 
-  let id = buildCanonicalMediaId(ids, providerKind, fallbackId) ?? fallbackId;
+  let id = buildCanonicalId(ids, fallbackId) ?? fallbackId;
   if (simklType === 'episode' && episodeInfo) {
     id = `${id}:${episodeInfo.season}:${episodeInfo.episode}`;
   }

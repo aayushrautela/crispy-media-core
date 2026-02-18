@@ -20,7 +20,7 @@ describe('simkl normalize', () => {
     expect(normalized?.type).toBe('movie');
     expect(normalized?.simklType).toBe('movie');
     expect(normalized?.ids).toEqual({ simkl: 471618, slug: 'john-wick-chapter-2', tmdb: 324552 });
-    expect(normalized?.id).toBe('tmdb:movie:324552');
+    expect(normalized?.id).toBe('tmdb:324552');
     expect(normalized?.images.poster).toBe('https://simkl.in/posters/74/74415673dcdc9cdd_ca.webp');
     expect(normalized?.images.posters).toContain('https://simkl.in/posters/74/74415673dcdc9cdd_ca.webp');
   });
@@ -54,7 +54,7 @@ describe('simkl normalize', () => {
 
     expect(normalized?.type).toBe('series');
     expect(normalized?.simklType).toBe('episode');
-    expect(normalized?.id).toBe('imdb:show:tt0903747:1:5');
+    expect(normalized?.id).toBe('tt0903747:1:5');
     expect(normalized?.episode).toEqual({ season: 1, episode: 5, title: 'Episode 5' });
     expect(normalized?.playbackProgress).toBe(45.5);
     expect(normalized?.pausedAt).toBe('2024-01-15T10:30:00.000Z');

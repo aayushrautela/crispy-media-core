@@ -1,6 +1,5 @@
 import { type ExternalIds, type ImageSet, type MediaDetails, type MediaType, type PersonCredit } from '../domain/media';
-import { normalizeImdbId } from '../ids/externalIds';
-import { buildCanonicalMediaId, mediaTypeToProviderKind } from '../ids/canonical';
+import { buildCanonicalId, normalizeImdbId } from '../ids/externalIds';
 import {
   type TMDBCastMember,
   type TMDBDetail,
@@ -221,9 +220,8 @@ export function normalizeTmdbDetails(detail: TMDBDetail, type: MediaType, images
 
   const title = isMovieDetail(detail) ? detail.title : detail.name;
   const released = getReleasedDate(detail);
-  const kind = mediaTypeToProviderKind(type);
-  const typedFallback = `tmdb:${kind}:${detail.id}`;
-  const id = buildCanonicalMediaId(ids, kind, typedFallback) ?? typedFallback;
+  const fallbackId = `tmdb:${detail.id}`;
+  const id = buildCanonicalId(ids, fallbackId) ?? fallbackId;
 
   const normalized: MediaDetails = {
     id,

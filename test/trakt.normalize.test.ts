@@ -80,7 +80,7 @@ describe('trakt normalize', () => {
     expect(normalized?.type).toBe('series');
 
     // Episode items should be keyed by show id + episode context.
-    expect(normalized?.id).toBe('tmdb:show:424242:1:2');
+    expect(normalized?.id).toBe('tmdb:424242:1:2');
 
     // Top-level ids are show-scoped (stable across episodes).
     expect(normalized?.ids).toEqual({ trakt: 123, tmdb: 424242 });

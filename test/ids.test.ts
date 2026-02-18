@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  buildCanonicalMediaId,
+  buildProviderRefFromStremioId,
   formatIdForIdPrefixes,
   normalizeImdbId,
   parseExternalId,
@@ -33,10 +33,10 @@ describe('ids', () => {
     expect(parseExternalId('tmdb:550')).toEqual({ tmdb: 550 });
   });
 
-  it('builds typed canonical ids', () => {
-    expect(buildCanonicalMediaId({ tmdb: 1 }, 'show')).toBe('tmdb:show:1');
-    expect(buildCanonicalMediaId({ trakt: 2, tmdb: 1 }, 'movie')).toBe('tmdb:movie:1');
-    expect(buildCanonicalMediaId({ imdb: 'tt0137523', tmdb: 1 }, 'movie')).toBe('imdb:movie:tt0137523');
+  it('builds typed provider refs from Stremio-style ids', () => {
+    expect(buildProviderRefFromStremioId('series', 'tmdb:1')).toBe('tmdb:show:1');
+    expect(buildProviderRefFromStremioId('movie', 'tt0137523')).toBe('imdb:movie:tt0137523');
+    expect(buildProviderRefFromStremioId('series', 'tt0944947:1:2')).toBe('imdb:show:tt0944947');
   });
 
   it('formats ids for addon idPrefixes', () => {

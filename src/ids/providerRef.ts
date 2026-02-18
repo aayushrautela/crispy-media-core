@@ -1,5 +1,7 @@
-import type { MediaType } from '../domain/media';
-import { normalizeImdbId } from './externalIds';
+import type { ExternalIds, MediaType } from '../domain/media';
+import { parseExternalId, type NumericIdAssumption, normalizeImdbId } from './externalIds';
+
+import { parseEpisodeIdSuffix } from '../stremio/id';
 
 export type ProviderName = 'tmdb' | 'trakt' | 'tvdb' | 'simkl' | 'imdb';
 
@@ -56,6 +58,32 @@ export function mediaTypeToProviderKind(type: MediaType): Exclude<ProviderKind, 
 
 export function formatProviderRef(ref: ProviderRef): string {
   return `${ref.provider}:${ref.kind}:${ref.id}`;
+}
+
+export function buildProviderRefFromExternalIds(type: MediaType, ids: ExternalIds): string | null {
+  const kind = mediaTypeToProviderKind(type);
+
+  if (ids.imdb) return formatProviderRef({ provider: 'imdb', kind, id: ids.imdb });
+  if (ids.tmdb) return formatProviderRef({ provider: 'tmdb', kind, id: ids.tmdb });
+  if (ids.trakt) return formatProviderRef({ provider: 'trakt', kind, id: ids.trakt });
+  if (ids.tvdb) return formatProviderRef({ provider: 'tvdb', kind, id: ids.tvdb });
+  if (ids.simkl) return formatProviderRef({ provider: 'simkl', kind, id: ids.simkl });
+
+  return null;
+}
+
+/**
+ * Converts a Stremio-style id (e.g. `tt0137523`, `tmdb:550`, `tt0944947:1:2`)
+ * into a typed provider ref suitable for enrichment/routing.
+ */
+export function buildProviderRefFromStremioId(
+  type: MediaType,
+  id: string,
+  options: { assumeNumeric?: NumericIdAssumption } = {},
+): string | null {
+  const baseId = parseEpisodeIdSuffix(id).baseId;
+  const ids = parseExternalId(baseId, { assumeNumeric: options.assumeNumeric ?? 'none' });
+  return buildProviderRefFromExternalIds(type, ids);
 }
 
 /**

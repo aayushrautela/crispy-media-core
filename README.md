@@ -1,6 +1,6 @@
 # @crispy-streaming/media-core
 
-Shared, platform-agnostic media domain package for Crispy clients.
+Shared, platform-agnostic media domain + ID + Stremio helpers for Crispy clients.
 
 ## Install
 
@@ -8,51 +8,139 @@ Shared, platform-agnostic media domain package for Crispy clients.
 npm install @crispy-streaming/media-core
 ```
 
-## Purpose
+## What This Package Includes
 
-This package centralizes:
-
-- canonical media types,
-- TMDB/Trakt/Simkl normalization,
-- external ID parsing and canonicalization.
+- Stremio/Nuvio-style content IDs + episode suffix helpers
+- Stremio addon payload types + best-effort parsers
+- Continue Watching / Up Next pure utilities
+- TMDB/Trakt/Simkl contracts + normalizers (normalized ids are Stremio-style)
+- Optional provider routing helpers for enrichment
 
 This package intentionally excludes:
 
-- React/React Native UI,
-- client-side state management,
-- storage and auth persistence,
-- API key handling.
+- React/React Native UI
+- client-side state management
+- storage and auth persistence
+- API key handling
 
 ## Folder Layout
 
 - `src/domain/*`: canonical domain models
 - `src/ids/*`: cross-provider ID helpers
+- `src/stremio/*`: Stremio types + parsers + Continue Watching helpers
 - `src/tmdb/*`: TMDB contracts + normalizers
 - `src/trakt/*`: Trakt contracts + normalizers
 - `src/simkl/*`: Simkl contracts + normalizers + payload builders
 
-## Strict ID parsing (recommended)
+## ID Model (Stremio/Nuvio)
 
-By default, bare numeric inputs like `"123"` or `123` are treated as **unknown** (not assumed to be TMDB/Trakt/TVDB/SIMKL). This avoids mixing provider namespaces across apps.
+Identity is the pair `(type, id)`.
 
-Use explicit, typed IDs:
+`id` is a Stremio-style content id:
 
 ```txt
-tmdb:movie:550
-tmdb:show:1399
-trakt:movie:1
-trakt:show:1
-tvdb:show:121361
-simkl:movie:12345
-imdb:movie:tt0137523
-imdb:show:tt0944947
+tt0137523
+tt0944947
+tmdb:550
+tvdb:121361
+trakt:1
+simkl:12345
 ```
 
-This package intentionally does not support "bare numeric = TMDB" behavior. Always prefix provider ids (e.g. `tmdb:movie:550`).
+Episodes are represented with a Stremio-style suffix:
 
-## Provider routing
+```txt
+tt0944947:1:1
+tmdb:1399:1:2
+```
 
-For cross-provider enrichment (e.g. Trakt/Simkl -> TMDB), use the router and register resolver/enricher plugins in your app:
+Helpers:
+
+```ts
+import { buildEpisodeId, normalizeStremioId, parseEpisodeIdSuffix } from '@crispy-streaming/media-core';
+
+normalizeStremioId('imdb:show:tt0944947'); // -> 'tt0944947'
+normalizeStremioId('tmdb:movie:550'); // -> 'tmdb:550'
+
+buildEpisodeId('tt0944947', 1, 1); // -> 'tt0944947:1:1'
+parseEpisodeIdSuffix('tt0944947:1:1'); // -> { baseId: 'tt0944947', season: 1, episode: 1 }
+```
+
+### Numeric IDs
+
+By default, bare numeric inputs like `"123"` or `123` are not assumed to be TMDB/Trakt/TVDB/SIMKL.
+
+If you *know* a number is TMDB, pass an assumption:
+
+```ts
+import { normalizeStremioId } from '@crispy-streaming/media-core';
+
+normalizeStremioId(550); // -> '550'
+normalizeStremioId(550, { assumeNumeric: 'tmdb' }); // -> 'tmdb:550'
+```
+
+## Stremio Types + Parsers
+
+This package includes lightweight Stremio types (`StremioManifest`, `StremioMeta`, `StremioVideo`, etc) and best-effort parsers for addon responses:
+
+```ts
+import {
+  parseStremioCatalogResponse,
+  parseStremioMetaResponse,
+  parseStremioStreamResponse,
+  parseStremioSubtitlesResponse,
+} from '@crispy-streaming/media-core';
+
+const catalog = parseStremioCatalogResponse(await res.json());
+const meta = parseStremioMetaResponse(await res.json());
+const streams = parseStremioStreamResponse(await res.json());
+const subtitles = parseStremioSubtitlesResponse(await res.json());
+```
+
+## Continue Watching / Up Next
+
+Pure utilities for building a Nuvio-like Continue Watching list:
+
+```ts
+import {
+  createUpNextPlaceholder,
+  mergeContinueWatching,
+  type WatchProgressEntry,
+} from '@crispy-streaming/media-core';
+
+const merged = mergeContinueWatching(progressEntries);
+
+// If you have Stremio meta videos + watched episode keys:
+const upNext = createUpNextPlaceholder(
+  'tt0944947',
+  Date.now(),
+  { season: 1, episode: 1 },
+  meta.videos ?? [],
+  { watchedEpisodeKeys: new Set(['1:1']) },
+);
+```
+
+## Provider Routing (Enrichment)
+
+For cross-provider enrichment (e.g. IMDb -> TMDB), use typed provider refs:
+
+```txt
+imdb:movie:tt0137523
+imdb:show:tt0944947
+tmdb:movie:550
+tmdb:show:1399
+```
+
+Convert a Stremio-style id into a typed provider ref:
+
+```ts
+import { buildProviderRefFromStremioId } from '@crispy-streaming/media-core';
+
+const typed = buildProviderRefFromStremioId('movie', 'tt0137523');
+// -> 'imdb:movie:tt0137523'
+```
+
+Then use the router with resolvers/enrichers provided by your app:
 
 ```ts
 import { createImdbToSimklResolver, createImdbToTmdbResolver, createMediaRouter } from '@crispy-streaming/media-core';
@@ -67,7 +155,6 @@ const router = createMediaRouter({
   ],
 });
 
-// strict input format (preferred):
 // router.enrich('tmdb', 'imdb:movie:tt0137523')
 ```
 
@@ -75,61 +162,10 @@ const router = createMediaRouter({
 
 - `npm run typecheck`
 - `npm run build`
+- `npm run test`
 - `npm pack --dry-run`
-
-## Usage
-
-```ts
-import {
-  buildSimklHistoryAddPayload,
-  normalizeSimklItem,
-  normalizeTmdbDetails,
-  normalizeTraktItem,
-  parseExternalId,
-  type MediaDetails,
-} from '@crispy-streaming/media-core';
-
-const ids = parseExternalId('tmdb:550');
-
-const trakt = normalizeTraktItem({
-  movie: {
-    title: 'Fight Club',
-    year: 1999,
-    ids: { tmdb: 550, imdb: 'tt0137523' },
-  },
-});
-
-const simkl = normalizeSimklItem({
-  type: 'movie',
-  title: 'Fight Club',
-  year: 1999,
-  poster: '74/74415673dcdc9cdd',
-  ids: { simkl: 53536, imdb: 'tt0137523', tmdb: 550 },
-});
-
-if (simkl) {
-  // Example payload for `POST /sync/history`:
-  const payload = buildSimklHistoryAddPayload('movie', simkl.ids, { watchedAt: new Date().toISOString() });
-  void payload;
-}
-
-let details: MediaDetails | null = null;
-if (trakt) {
-  // pass TMDB details payload and image payload from your own API client
-  // details = normalizeTmdbDetails(tmdbPayload, trakt.type, tmdbImagesPayload)
-}
-```
 
 ## Package Metadata
 
 - Repository: `https://github.com/aayushrautela/crispy-media-core`
 - npm: `https://www.npmjs.com/package/@crispy-streaming/media-core`
-
-## Publish Preparation (for new repo)
-
-Before publishing from a dedicated repository:
-
-1. Replace placeholder repository links in `package.json`.
-2. Finalize package scope/name.
-3. Add CI for typecheck/test/build.
-4. Publish prerelease (`0.x`) first.

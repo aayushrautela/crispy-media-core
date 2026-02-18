@@ -1,6 +1,5 @@
 import { type EpisodeInfo, type ExternalIds, type ImageSet, type MediaType, type MediaCore } from '../domain/media';
-import { normalizeImdbId, normalizeMediaType } from '../ids/externalIds';
-import { buildCanonicalMediaId, mediaTypeToProviderKind } from '../ids/canonical';
+import { buildCanonicalId, normalizeImdbId, normalizeMediaType } from '../ids/externalIds';
 import { type TraktImages, type TraktWrappedItem } from './types';
 
 const HTTP_PATTERN = /^https?:\/\//i;
@@ -323,12 +322,11 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
   }
 
   const fallbackId = showTitle && title !== showTitle ? `${title}:${showTitle}` : title;
-  const providerKind = mediaTypeToProviderKind(type);
 
   let id: string = fallbackId;
 
   if (traktType === 'episode') {
-    const showCanonical = buildCanonicalMediaId(showIds ?? {}, providerKind, fallbackId);
+    const showCanonical = buildCanonicalId(showIds ?? {}, fallbackId);
 
     if (showCanonical && episodeInfo) {
       id = `${showCanonical}:${episodeInfo.season}:${episodeInfo.episode}`;
@@ -336,10 +334,10 @@ export function normalizeTraktItem(input: TraktWrappedItem): NormalizedTraktItem
       id = showCanonical;
     } else {
       // Last resort: fall back to episode-scoped ids (if the show is unavailable).
-      id = (episodeIds ? buildCanonicalMediaId(episodeIds, 'episode', fallbackId) : null) ?? fallbackId;
+      id = (episodeIds ? buildCanonicalId(episodeIds, fallbackId) : null) ?? fallbackId;
     }
   } else {
-    id = buildCanonicalMediaId(ids, providerKind, fallbackId) ?? fallbackId;
+    id = buildCanonicalId(ids, fallbackId) ?? fallbackId;
   }
 
   const normalized: NormalizedTraktItem = {
