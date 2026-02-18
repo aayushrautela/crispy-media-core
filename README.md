@@ -13,7 +13,7 @@ npm install @crispy-streaming/media-core
 This package centralizes:
 
 - canonical media types,
-- TMDB/Trakt normalization,
+- TMDB/Trakt/Simkl normalization,
 - external ID parsing and canonicalization.
 
 This package intentionally excludes:
@@ -29,6 +29,7 @@ This package intentionally excludes:
 - `src/ids/*`: cross-provider ID helpers
 - `src/tmdb/*`: TMDB contracts + normalizers
 - `src/trakt/*`: Trakt contracts + normalizers
+- `src/simkl/*`: Simkl contracts + normalizers + payload builders
 
 ## Strict ID parsing (recommended)
 
@@ -51,13 +52,16 @@ This package intentionally does not support "bare numeric = TMDB" behavior. Alwa
 
 ## Provider routing
 
-For cross-provider enrichment (Trakt -> TMDB today, TVDB/SIMKL later), use the router and register resolver/enricher plugins in your app:
+For cross-provider enrichment (e.g. Trakt/Simkl -> TMDB), use the router and register resolver/enricher plugins in your app:
 
 ```ts
-import { createImdbToTmdbResolver, createMediaRouter } from '@crispy-streaming/media-core';
+import { createImdbToSimklResolver, createImdbToTmdbResolver, createMediaRouter } from '@crispy-streaming/media-core';
 
 const router = createMediaRouter({
-  resolvers: [createImdbToTmdbResolver({ apiKey: process.env.TMDB_API_KEY! })],
+  resolvers: [
+    createImdbToTmdbResolver({ apiKey: process.env.TMDB_API_KEY! }),
+    createImdbToSimklResolver({ clientId: process.env.SIMKL_CLIENT_ID! }),
+  ],
   enrichers: [
     // app-provided enrichers for tmdb/trakt/tvdb/simkl
   ],
@@ -77,6 +81,8 @@ const router = createMediaRouter({
 
 ```ts
 import {
+  buildSimklHistoryAddPayload,
+  normalizeSimklItem,
   normalizeTmdbDetails,
   normalizeTraktItem,
   parseExternalId,
@@ -92,6 +98,20 @@ const trakt = normalizeTraktItem({
     ids: { tmdb: 550, imdb: 'tt0137523' },
   },
 });
+
+const simkl = normalizeSimklItem({
+  type: 'movie',
+  title: 'Fight Club',
+  year: 1999,
+  poster: '74/74415673dcdc9cdd',
+  ids: { simkl: 53536, imdb: 'tt0137523', tmdb: 550 },
+});
+
+if (simkl) {
+  // Example payload for `POST /sync/history`:
+  const payload = buildSimklHistoryAddPayload('movie', simkl.ids, { watchedAt: new Date().toISOString() });
+  void payload;
+}
 
 let details: MediaDetails | null = null;
 if (trakt) {
