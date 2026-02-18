@@ -39,6 +39,20 @@ describe('trakt normalize', () => {
     expect(normalized?.images.poster).toBe('https://walter.trakt.tv/images/posters/test.jpg');
   });
 
+  it('prefixes https:// for scheme-less trakt CDN URLs', () => {
+    const normalized = normalizeTraktItem({
+      movie: {
+        title: 'Test',
+        ids: { trakt: 1, imdb: 'tt0137523' },
+        images: { poster: ['media.trakt.tv/images/movies/001/000/015/posters/medium/a0b95ac0c6.jpg.webp'] },
+      },
+    } as any);
+
+    expect(normalized?.images.poster).toBe(
+      'https://media.trakt.tv/images/movies/001/000/015/posters/medium/a0b95ac0c6.jpg.webp'
+    );
+  });
+
   it('keeps episode items show-scoped ids and show artwork', () => {
     const normalized = normalizeTraktItem({
       progress: 12.5,
@@ -48,16 +62,16 @@ describe('trakt normalize', () => {
         number: 2,
         title: 'Pilot (Part 2)',
         ids: { trakt: 999, tmdb: 6698721 },
-        images: { thumb: { full: '/images/thumbs/episode.jpg' } },
+        images: { thumb: ['media.trakt.tv/images/shows/000/000/123/thumbs/medium/episode.jpg.webp'] },
       },
       show: {
         title: 'Test Show',
         year: 2020,
         ids: { trakt: 123, tmdb: 424242 },
         images: {
-          poster: { full: '/images/posters/show.jpg' },
-          fanart: { full: '/images/fanart/show.jpg' },
-          logo: { full: '/images/logos/show.png' },
+          poster: ['media.trakt.tv/images/shows/000/000/123/posters/medium/show.jpg.webp'],
+          fanart: ['media.trakt.tv/images/shows/000/000/123/fanarts/medium/show.jpg.webp'],
+          logo: ['media.trakt.tv/images/shows/000/000/123/logos/medium/show.png.webp'],
         },
       },
     } as any);
@@ -74,9 +88,9 @@ describe('trakt normalize', () => {
     expect((normalized as any)?.episodeIds).toEqual({ trakt: 999, tmdb: 6698721 });
 
     // Keep show artwork stable; episode screenshot is attached as thumbnail.
-    expect(normalized?.images.poster).toBe('https://walter.trakt.tv/images/posters/show.jpg');
-    expect(normalized?.images.backdrop).toBe('https://walter.trakt.tv/images/fanart/show.jpg');
-    expect(normalized?.images.logo).toBe('https://walter.trakt.tv/images/logos/show.png');
-    expect(normalized?.images.thumbnail).toBe('https://walter.trakt.tv/images/thumbs/episode.jpg');
+    expect(normalized?.images.poster).toBe('https://media.trakt.tv/images/shows/000/000/123/posters/medium/show.jpg.webp');
+    expect(normalized?.images.backdrop).toBe('https://media.trakt.tv/images/shows/000/000/123/fanarts/medium/show.jpg.webp');
+    expect(normalized?.images.logo).toBe('https://media.trakt.tv/images/shows/000/000/123/logos/medium/show.png.webp');
+    expect(normalized?.images.thumbnail).toBe('https://media.trakt.tv/images/shows/000/000/123/thumbs/medium/episode.jpg.webp');
   });
 });

@@ -12,13 +12,20 @@ export interface TraktImageVariant {
   full?: string;
   medium?: string;
   thumb?: string;
+  url?: string;
 }
 
+export type TraktImageEntry = string | TraktImageVariant;
+export type TraktImageField = TraktImageEntry | TraktImageEntry[];
+
 export interface TraktImages {
-  poster?: TraktImageVariant[];
-  fanart?: TraktImageVariant[];
-  logo?: TraktImageVariant[];
-  thumb?: TraktImageVariant[];
+  poster?: TraktImageField;
+  fanart?: TraktImageField;
+  logo?: TraktImageField;
+  thumb?: TraktImageField;
+  banner?: TraktImageField;
+  clearart?: TraktImageField;
+  [key: string]: TraktImageField | undefined;
 }
 
 export interface TraktMediaItem {

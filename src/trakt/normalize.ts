@@ -4,6 +4,7 @@ import { buildCanonicalMediaId, mediaTypeToProviderKind } from '../ids/canonical
 import { type TraktImages, type TraktWrappedItem } from './types';
 
 const HTTP_PATTERN = /^https?:\/\//i;
+const HOST_WITH_PATH_PATTERN = /^[a-z0-9.-]+\.[a-z]{2,}(?:\/|$)/i;
 const TRAKT_WALTER_BASE_URL = 'https://walter.trakt.tv';
 
 export interface NormalizedTraktItem extends MediaCore {
@@ -38,24 +39,33 @@ function normalizeImageUrl(value: string | undefined): string | undefined {
     return undefined;
   }
 
-  if (HTTP_PATTERN.test(value)) {
-    return value;
+  const normalizedValue = value.trim();
+  if (!normalizedValue) {
+    return undefined;
   }
 
-  if (value.startsWith('//')) {
-    return `https:${value}`;
+  if (HTTP_PATTERN.test(normalizedValue)) {
+    return normalizedValue;
   }
 
-  if (value.startsWith('/http')) {
-    return `https:${value.slice(1)}`;
+  if (normalizedValue.startsWith('//')) {
+    return `https:${normalizedValue}`;
   }
 
-  if (value.startsWith('/images')) {
-    return `${TRAKT_WALTER_BASE_URL}${value}`;
+  if (normalizedValue.startsWith('/http')) {
+    return `https:${normalizedValue.slice(1)}`;
   }
 
-  if (value.startsWith('/')) {
-    return `https://image.tmdb.org/t/p/original${value}`;
+  if (normalizedValue.startsWith('/images')) {
+    return `${TRAKT_WALTER_BASE_URL}${normalizedValue}`;
+  }
+
+  if (normalizedValue.startsWith('/')) {
+    return `https://image.tmdb.org/t/p/original${normalizedValue}`;
+  }
+
+  if (HOST_WITH_PATH_PATTERN.test(normalizedValue)) {
+    return `https://${normalizedValue}`;
   }
 
   return undefined;
@@ -68,6 +78,15 @@ function firstImageValue(value: unknown): string | undefined {
 
   if (Array.isArray(value)) {
     for (const entry of value) {
+      if (typeof entry === 'string') {
+        const normalized = normalizeImageUrl(entry);
+        if (normalized) {
+          return normalized;
+        }
+
+        continue;
+      }
+
       const record = asRecord(entry);
       if (!record) {
         continue;
