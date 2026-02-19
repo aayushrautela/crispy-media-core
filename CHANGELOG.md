@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.4.5] - 2026-02-19
+
+### Added
+
+- `resolveTmdbId` now supports optional `resolveImdbForTmdbId` to resolve IMDb IDs from TMDB IDs via TMDB `external_ids` for addon-friendly navigation.
+
 ## [0.4.4] - 2026-02-19
 
 ### Changed

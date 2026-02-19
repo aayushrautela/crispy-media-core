@@ -7,6 +7,7 @@ export interface ResolveTmdbIdOptions {
   fetch?: typeof fetch;
   baseUrl?: string;
   signal?: AbortSignal;
+  resolveImdbForTmdbId?: boolean;
 }
 
 export class TmdbResolveError extends Error {
@@ -26,10 +27,44 @@ type FindResponse = {
   tv_results?: Array<{ id?: number }>;
 };
 
+type ExternalIdsResponse = {
+  imdb_id?: string | null;
+};
+
 function toPositiveInt(value: unknown): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   const n = Math.trunc(value);
   return n > 0 ? n : null;
+}
+
+function normalizeImdbId(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return /^tt\d+$/i.test(trimmed) ? trimmed.toLowerCase() : undefined;
+}
+
+async function resolveImdbFromTmdbId(tmdbId: number, type: MediaType, options: ResolveTmdbIdOptions): Promise<string | undefined> {
+  const baseUrl = (options.baseUrl || 'https://api.themoviedb.org/3').replace(/\/$/, '');
+  const fetchImpl = options.fetch || fetch;
+  const route = type === 'movie' ? 'movie' : 'tv';
+  const url = `${baseUrl}/${route}/${tmdbId}/external_ids?api_key=${encodeURIComponent(options.apiKey)}`;
+
+  const init: RequestInit = { method: 'GET' };
+  if (options.signal) {
+    init.signal = options.signal;
+  }
+
+  try {
+    const res = await fetchImpl(url, init);
+    if (!res.ok) {
+      return undefined;
+    }
+
+    const data = (await res.json()) as ExternalIdsResponse;
+    return normalizeImdbId(data.imdb_id);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -62,6 +97,11 @@ export async function resolveTmdbId(input: string | number, type: MediaType, opt
     const result: { tmdbId: number | null; imdbId?: string } = { tmdbId: parsed.ids.tmdb };
     if (parsed.ids.imdb) {
       result.imdbId = parsed.ids.imdb;
+    } else if (options.resolveImdbForTmdbId) {
+      const imdbId = await resolveImdbFromTmdbId(parsed.ids.tmdb, type, options);
+      if (imdbId) {
+        result.imdbId = imdbId;
+      }
     }
     return result;
   }
