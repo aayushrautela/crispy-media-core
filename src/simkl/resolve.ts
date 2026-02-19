@@ -46,11 +46,11 @@ function normalizeItemType(value: unknown): SimklItemType | null {
   return null;
 }
 
-function idsFromSearchItemIds(value: unknown): { simkl?: number; imdb?: string; tmdb?: number; tvdb?: number; slug?: string } {
+function idsFromSearchItemIds(value: unknown): { simkl?: number; imdb?: string; tmdb?: number; slug?: string } {
   const record = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
   if (!record) return {};
 
-  const result: { simkl?: number; imdb?: string; tmdb?: number; tvdb?: number; slug?: string } = {};
+  const result: { simkl?: number; imdb?: string; tmdb?: number; slug?: string } = {};
 
   const simklRaw = record.simkl ?? record.simkl_id;
   const simkl = typeof simklRaw === 'number'
@@ -69,13 +69,6 @@ function idsFromSearchItemIds(value: unknown): { simkl?: number; imdb?: string; 
       ? Number.parseInt(record.tmdb.trim(), 10)
       : NaN;
   if (Number.isFinite(tmdb) && tmdb > 0) result.tmdb = tmdb;
-
-  const tvdb = typeof record.tvdb === 'number'
-    ? Math.trunc(record.tvdb)
-    : typeof record.tvdb === 'string'
-      ? Number.parseInt(record.tvdb.trim(), 10)
-      : NaN;
-  if (Number.isFinite(tvdb) && tvdb > 0) result.tvdb = tvdb;
 
   const slug = typeof record.slug === 'string' && record.slug.trim() ? record.slug.trim() : undefined;
   if (slug) result.slug = slug;
@@ -96,7 +89,7 @@ export async function resolveSimklId(
   input: string | number,
   type: MediaType,
   options: ResolveSimklIdOptions
-): Promise<{ simklId: number | null; slug?: string; imdbId?: string; tmdbId?: number; tvdbId?: number }> {
+): Promise<{ simklId: number | null; slug?: string; imdbId?: string; tmdbId?: number }> {
   const clientId = options.clientId?.trim();
   if (!clientId) {
     throw new SimklResolveError('Missing Simkl clientId');
@@ -111,15 +104,14 @@ export async function resolveSimklId(
   }
 
   // If a different provider is explicitly specified, do not attempt Simkl resolution.
-  if (parsed.provider && parsed.provider !== 'simkl' && parsed.provider !== 'imdb' && parsed.provider !== 'tmdb' && parsed.provider !== 'tvdb') {
+  if (parsed.provider && parsed.provider !== 'simkl' && parsed.provider !== 'imdb' && parsed.provider !== 'tmdb') {
     return { simklId: null };
   }
 
   if (parsed.ids.simkl) {
-    const out: { simklId: number | null; slug?: string; imdbId?: string; tmdbId?: number; tvdbId?: number } = { simklId: parsed.ids.simkl };
+    const out: { simklId: number | null; slug?: string; imdbId?: string; tmdbId?: number } = { simklId: parsed.ids.simkl };
     if (parsed.ids.imdb) out.imdbId = parsed.ids.imdb;
     if (parsed.ids.tmdb) out.tmdbId = parsed.ids.tmdb;
-    if (parsed.ids.tvdb) out.tvdbId = parsed.ids.tvdb;
     if (parsed.ids.slug) out.slug = parsed.ids.slug;
     return out;
   }
@@ -133,8 +125,6 @@ export async function resolveSimklId(
   } else if (parsed.ids.tmdb) {
     params.tmdb = String(parsed.ids.tmdb);
     params.type = expectedKind === 'movie' ? 'movie' : 'show';
-  } else if (parsed.ids.tvdb) {
-    params.tvdb = String(parsed.ids.tvdb);
   } else {
     return { simklId: null };
   }
@@ -178,10 +168,9 @@ export async function resolveSimklId(
     return { simklId: null };
   }
 
-  const out: { simklId: number | null; slug?: string; imdbId?: string; tmdbId?: number; tvdbId?: number } = { simklId: first.simkl };
+  const out: { simklId: number | null; slug?: string; imdbId?: string; tmdbId?: number } = { simklId: first.simkl };
   if (first.slug) out.slug = first.slug;
   if (first.imdb) out.imdbId = first.imdb;
   if (first.tmdb) out.tmdbId = first.tmdb;
-  if (first.tvdb) out.tvdbId = first.tvdb;
   return out;
 }

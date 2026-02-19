@@ -3,7 +3,6 @@ export type MediaType = 'movie' | 'series';
 export interface ExternalIds {
   trakt?: number;
   tmdb?: number;
-  tvdb?: number;
   simkl?: number;
   imdb?: string;
   slug?: string;

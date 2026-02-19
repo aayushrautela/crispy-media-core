@@ -26,10 +26,9 @@ export function getTraktIdsObject(id: string | number): TraktIdsObject {
 
 export function isValidTraktIdsObject(ids: unknown): ids is Required<Pick<TraktIdsObject, 'imdb'>> | Required<Pick<TraktIdsObject, 'tmdb'>> | Required<Pick<TraktIdsObject, 'trakt'>> {
   if (!ids || typeof ids !== 'object') return false;
-  const anyIds = ids as { trakt?: unknown; tmdb?: unknown; imdb?: unknown; tvdb?: unknown; slug?: unknown };
+  const anyIds = ids as { trakt?: unknown; tmdb?: unknown; imdb?: unknown; slug?: unknown };
   if (typeof anyIds.trakt === 'number' && Number.isFinite(anyIds.trakt) && anyIds.trakt > 0) return true;
   if (typeof anyIds.tmdb === 'number' && Number.isFinite(anyIds.tmdb) && anyIds.tmdb > 0) return true;
-  if (typeof anyIds.tvdb === 'number' && Number.isFinite(anyIds.tvdb) && anyIds.tvdb > 0) return true;
   if (typeof anyIds.imdb === 'string' && /^tt\d+$/i.test(anyIds.imdb)) return true;
   if (typeof anyIds.slug === 'string' && anyIds.slug.trim().length > 0) return true;
   return false;

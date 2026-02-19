@@ -21,7 +21,6 @@ function pickFirstProviderRef(ids: ReturnType<typeof parseMediaIdInput>['ids'], 
   if (ids.imdb) return { provider: 'imdb', kind, id: ids.imdb };
   if (ids.tmdb) return { provider: 'tmdb', kind, id: ids.tmdb };
   if (ids.trakt) return { provider: 'trakt', kind, id: ids.trakt };
-  if (ids.tvdb) return { provider: 'tvdb', kind, id: ids.tvdb };
   if (ids.simkl) return { provider: 'simkl', kind, id: ids.simkl };
   return null;
 }

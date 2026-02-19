@@ -5,7 +5,6 @@ export interface TraktIds extends ExternalIds {
   slug?: string;
   imdb?: string;
   tmdb?: number;
-  tvdb?: number;
 }
 
 export interface TraktImageVariant {

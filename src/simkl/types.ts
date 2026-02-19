@@ -16,7 +16,6 @@ export interface SimklIdsRaw {
   slug?: string | null;
   imdb?: string | null;
   tmdb?: number | string | null;
-  tvdb?: number | string | null;
 
   // Anime-only ids (often present on Simkl show objects)
   mal?: number | string | null;

@@ -38,7 +38,6 @@ function inferNumericProvider(idPrefixes: readonly string[] | undefined): Provid
     const lower = prefix.toLowerCase();
     if (lower.startsWith('tmdb')) providers.add('tmdb');
     else if (lower.startsWith('trakt')) providers.add('trakt');
-    else if (lower.startsWith('tvdb')) providers.add('tvdb');
     else if (lower.startsWith('simkl')) providers.add('simkl');
   }
 
@@ -107,11 +106,6 @@ export function formatIdForIdPrefixes(
   if (typeof ids.trakt === 'number') {
     candidates.push(appendEpisodeSuffix(`trakt:${ids.trakt}`, season, episode));
     candidates.push(appendEpisodeSuffix(formatTypedProviderId('trakt', kind, ids.trakt), season, episode));
-  }
-
-  if (typeof ids.tvdb === 'number') {
-    candidates.push(appendEpisodeSuffix(`tvdb:${ids.tvdb}`, season, episode));
-    candidates.push(appendEpisodeSuffix(formatTypedProviderId('tvdb', kind, ids.tvdb), season, episode));
   }
 
   if (typeof ids.simkl === 'number') {

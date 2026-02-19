@@ -3,7 +3,7 @@ import { parseExternalId, type NumericIdAssumption, normalizeImdbId } from './ex
 
 import { parseEpisodeIdSuffix } from '../stremio/id';
 
-export type ProviderName = 'tmdb' | 'trakt' | 'tvdb' | 'simkl' | 'imdb';
+export type ProviderName = 'tmdb' | 'trakt' | 'simkl' | 'imdb';
 
 /**
  * Provider-level kinds used for disambiguating ids across apps.
@@ -33,8 +33,7 @@ export interface ProviderRefLoose {
   id: number | string;
 }
 
-const PROVIDERS: ReadonlySet<string> = new Set(['tmdb', 'trakt', 'tvdb', 'simkl', 'imdb']);
-const KINDS: ReadonlySet<string> = new Set(['movie', 'show', 'episode', 'tv', 'series']);
+const PROVIDERS: ReadonlySet<string> = new Set(['tmdb', 'trakt', 'simkl', 'imdb']);
 
 function normalizeKind(value: string | undefined): ProviderKind | undefined {
   if (!value) return undefined;
@@ -66,7 +65,6 @@ export function buildProviderRefFromExternalIds(type: MediaType, ids: ExternalId
   if (ids.imdb) return formatProviderRef({ provider: 'imdb', kind, id: ids.imdb });
   if (ids.tmdb) return formatProviderRef({ provider: 'tmdb', kind, id: ids.tmdb });
   if (ids.trakt) return formatProviderRef({ provider: 'trakt', kind, id: ids.trakt });
-  if (ids.tvdb) return formatProviderRef({ provider: 'tvdb', kind, id: ids.tvdb });
   if (ids.simkl) return formatProviderRef({ provider: 'simkl', kind, id: ids.simkl });
 
   return null;
@@ -113,7 +111,7 @@ export function parseProviderRefStrict(input: string): ProviderRef | null {
   const numeric = parsePositiveInt(idPart);
   if (!numeric) return null;
 
-  if (provider === 'tmdb' || provider === 'trakt' || provider === 'tvdb' || provider === 'simkl') {
+  if (provider === 'tmdb' || provider === 'trakt' || provider === 'simkl') {
     return { provider, kind, id: numeric };
   }
 

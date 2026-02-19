@@ -42,7 +42,6 @@ Identity is the pair `(type, id)`.
 tt0137523
 tt0944947
 tmdb:550
-tvdb:121361
 trakt:1
 simkl:12345
 ```
@@ -68,7 +67,7 @@ parseEpisodeIdSuffix('tt0944947:1:1'); // -> { baseId: 'tt0944947', season: 1, e
 
 ### Numeric IDs
 
-By default, bare numeric inputs like `"123"` or `123` are not assumed to be TMDB/Trakt/TVDB/SIMKL.
+By default, bare numeric inputs like `"123"` or `123` are not assumed to be TMDB/Trakt/SIMKL.
 
 If you *know* a number is TMDB, pass an assumption:
 
@@ -151,7 +150,7 @@ const router = createMediaRouter({
     createImdbToSimklResolver({ clientId: process.env.SIMKL_CLIENT_ID! }),
   ],
   enrichers: [
-    // app-provided enrichers for tmdb/trakt/tvdb/simkl
+    // app-provided enrichers for tmdb/trakt/simkl
   ],
 });
 

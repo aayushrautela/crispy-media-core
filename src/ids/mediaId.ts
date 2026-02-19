@@ -54,7 +54,7 @@ export interface ParseMediaIdOptions {
  * Best-effort parser for inputs used across apps.
  * - Recognizes tmdb:/trakt:/imdb: prefixes
  * - Extracts episode suffix (:<season>:<episode>)
- * - Produces canonical ID preference order: imdb -> tmdb -> trakt -> tvdb -> simkl -> fallback baseId
+ * - Produces canonical ID preference order: imdb -> tmdb -> trakt -> simkl -> fallback baseId
  */
 export function parseMediaIdInput(input: string | number, options: ParseMediaIdOptions = {}): ParsedMediaIdInput {
   const assumeNumeric: NumericIdAssumption = options.assumeNumeric ?? 'none';

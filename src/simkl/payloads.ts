@@ -26,10 +26,9 @@ function isNonEmptyString(value: unknown): value is string {
 
 export function isValidSimklIdsObject(ids: unknown): ids is Required<Pick<SimklIdsObject, 'simkl'>> | Required<Pick<SimklIdsObject, 'imdb'>> | Required<Pick<SimklIdsObject, 'tmdb'>> {
   if (!ids || typeof ids !== 'object') return false;
-  const anyIds = ids as { simkl?: unknown; tmdb?: unknown; tvdb?: unknown; imdb?: unknown; slug?: unknown };
+  const anyIds = ids as { simkl?: unknown; tmdb?: unknown; imdb?: unknown; slug?: unknown };
   if (typeof anyIds.simkl === 'number' && Number.isFinite(anyIds.simkl) && anyIds.simkl > 0) return true;
   if (typeof anyIds.tmdb === 'number' && Number.isFinite(anyIds.tmdb) && anyIds.tmdb > 0) return true;
-  if (typeof anyIds.tvdb === 'number' && Number.isFinite(anyIds.tvdb) && anyIds.tvdb > 0) return true;
   if (typeof anyIds.imdb === 'string' && /^tt\d+$/i.test(anyIds.imdb)) return true;
   if (typeof anyIds.slug === 'string' && anyIds.slug.trim().length > 0) return true;
   return false;
@@ -50,10 +49,6 @@ function normalizeIdsForPayload(ids: SimklIdsObject): SimklIdsRaw {
 
   if (typeof ids.tmdb === 'number' && Number.isFinite(ids.tmdb) && ids.tmdb > 0) {
     payload.tmdb = Math.trunc(ids.tmdb);
-  }
-
-  if (typeof ids.tvdb === 'number' && Number.isFinite(ids.tvdb) && ids.tvdb > 0) {
-    payload.tvdb = Math.trunc(ids.tvdb);
   }
 
   const imdb = normalizeImdbId(ids.imdb);

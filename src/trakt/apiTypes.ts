@@ -97,7 +97,6 @@ export interface TraktRatingItem {
     title: string;
     ids: {
       trakt?: number;
-      tvdb?: number | null;
       imdb?: string | null;
       tmdb?: number | null;
     };

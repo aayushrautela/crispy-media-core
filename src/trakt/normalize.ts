@@ -161,11 +161,6 @@ function extractIds(value: unknown): ExternalIds {
     ids.tmdb = tmdb;
   }
 
-  const tvdb = readNumber(record, 'tvdb');
-  if (tvdb) {
-    ids.tvdb = tvdb;
-  }
-
   const imdb = normalizeImdbId(readString(record, 'imdb'));
   if (imdb) {
     ids.imdb = imdb;

@@ -24,11 +24,11 @@ function normalizeItemType(value: unknown): SimklItemType | null {
   return null;
 }
 
-function idsFromSearchItemIds(value: unknown): { simkl?: number; imdb?: string; tmdb?: number; tvdb?: number } {
+function idsFromSearchItemIds(value: unknown): { simkl?: number; imdb?: string; tmdb?: number } {
   const record = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
   if (!record) return {};
 
-  const out: { simkl?: number; imdb?: string; tmdb?: number; tvdb?: number } = {};
+  const out: { simkl?: number; imdb?: string; tmdb?: number } = {};
 
   const simklRaw = record.simkl ?? record.simkl_id;
   const simkl = typeof simklRaw === 'number'
@@ -47,13 +47,6 @@ function idsFromSearchItemIds(value: unknown): { simkl?: number; imdb?: string; 
       ? Number.parseInt(record.tmdb.trim(), 10)
       : NaN;
   if (Number.isFinite(tmdb) && tmdb > 0) out.tmdb = tmdb;
-
-  const tvdb = typeof record.tvdb === 'number'
-    ? Math.trunc(record.tvdb)
-    : typeof record.tvdb === 'string'
-      ? Number.parseInt(record.tvdb.trim(), 10)
-      : NaN;
-  if (Number.isFinite(tvdb) && tvdb > 0) out.tvdb = tvdb;
 
   return out;
 }
@@ -91,7 +84,7 @@ async function fetchSearchId(
   return Array.isArray(data) ? data : null;
 }
 
-function pickCandidate(list: unknown[], expectedKind: 'movie' | 'show'): { simkl?: number; imdb?: string; tmdb?: number; tvdb?: number } | null {
+function pickCandidate(list: unknown[], expectedKind: 'movie' | 'show'): { simkl?: number; imdb?: string; tmdb?: number } | null {
   for (const item of list) {
     const rec = typeof item === 'object' && item !== null ? (item as Record<string, unknown>) : null;
     if (!rec) continue;
@@ -103,7 +96,7 @@ function pickCandidate(list: unknown[], expectedKind: 'movie' | 'show'): { simkl
     if (!matches) continue;
 
     const ids = idsFromSearchItemIds(rec.ids);
-    if (ids.simkl || ids.imdb || ids.tmdb || ids.tvdb) {
+    if (ids.simkl || ids.imdb || ids.tmdb) {
       return ids;
     }
   }
@@ -147,24 +140,6 @@ export function createTmdbToSimklResolver(options: SimklSearchIdResolverOptions)
   };
 }
 
-export function createTvdbToSimklResolver(options: SimklSearchIdResolverOptions): ProviderResolver {
-  return {
-    from: 'tvdb',
-    to: 'simkl',
-    resolve: async (input: ProviderRef, context?: ResolveContext) => {
-      if (input.provider !== 'tvdb') return null;
-      if (input.kind !== 'movie' && input.kind !== 'show') return null;
-
-      const list = await fetchSearchId(options, { tvdb: String(input.id), type: input.kind === 'movie' ? 'movie' : 'show' }, context);
-      if (!list) return null;
-
-      const candidate = pickCandidate(list, input.kind);
-      if (!candidate?.simkl) return null;
-      return { provider: 'simkl', kind: input.kind, id: candidate.simkl };
-    },
-  };
-}
-
 export function createSimklToImdbResolver(options: SimklSearchIdResolverOptions): ProviderResolver {
   return {
     from: 'simkl',
@@ -197,24 +172,6 @@ export function createSimklToTmdbResolver(options: SimklSearchIdResolverOptions)
       const candidate = pickCandidate(list, input.kind);
       if (!candidate?.tmdb) return null;
       return { provider: 'tmdb', kind: input.kind, id: candidate.tmdb };
-    },
-  };
-}
-
-export function createSimklToTvdbResolver(options: SimklSearchIdResolverOptions): ProviderResolver {
-  return {
-    from: 'simkl',
-    to: 'tvdb',
-    resolve: async (input: ProviderRef, context?: ResolveContext) => {
-      if (input.provider !== 'simkl') return null;
-      if (input.kind !== 'movie' && input.kind !== 'show') return null;
-
-      const list = await fetchSearchId(options, { simkl: String(input.id) }, context);
-      if (!list) return null;
-
-      const candidate = pickCandidate(list, input.kind);
-      if (!candidate?.tvdb) return null;
-      return { provider: 'tvdb', kind: input.kind, id: candidate.tvdb };
     },
   };
 }

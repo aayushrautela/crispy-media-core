@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.4.4] - 2026-02-19
+
+### Changed
+
+- BREAKING: removed TVDB support from ID assumptions, ID parsing/normalization, resolver routing, and Trakt/Simkl payload ID contracts.
+
 ## [0.1.0] - 2026-02-14
 
 ### Added

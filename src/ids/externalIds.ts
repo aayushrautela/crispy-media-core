@@ -2,13 +2,12 @@ import { type ExternalIds, type MediaType } from '../domain/media';
 
 const TMDB_PREFIX = 'tmdb:';
 const TRAKT_PREFIX = 'trakt:';
-const TVDB_PREFIX = 'tvdb:';
 const SIMKL_PREFIX = 'simkl:';
 const IMDB_PREFIX = 'imdb:';
 const IMDB_PATTERN = /^tt\d+$/i;
 const NUMERIC_PATTERN = /^\d+$/;
 
-export type NumericIdAssumption = 'none' | 'tmdb' | 'trakt' | 'tvdb' | 'simkl';
+export type NumericIdAssumption = 'none' | 'tmdb' | 'trakt' | 'simkl';
 
 export interface ParseExternalIdOptions {
   /**
@@ -101,7 +100,6 @@ function parseNumericAsProvider(n: number, assume: NumericIdAssumption): Externa
 
   if (assume === 'tmdb') return { tmdb: value };
   if (assume === 'trakt') return { trakt: value };
-  if (assume === 'tvdb') return { tvdb: value };
   if (assume === 'simkl') return { simkl: value };
   return {};
 }
@@ -133,12 +131,6 @@ export function parseExternalId(input: string | number, options: ParseExternalId
     return trakt ? { trakt } : {};
   }
 
-  if (lowered.startsWith(TVDB_PREFIX)) {
-    const remainder = lowered.slice(TVDB_PREFIX.length);
-    const tvdb = extractPrefixedNumericId(remainder);
-    return tvdb ? { tvdb } : {};
-  }
-
   if (lowered.startsWith(SIMKL_PREFIX)) {
     const remainder = lowered.slice(SIMKL_PREFIX.length);
     const simkl = extractPrefixedNumericId(remainder);
@@ -168,9 +160,6 @@ export function mergeExternalIds(...sources: ExternalIds[]): ExternalIds {
     if (!merged.tmdb && ids.tmdb) {
       merged.tmdb = ids.tmdb;
     }
-    if (!merged.tvdb && ids.tvdb) {
-      merged.tvdb = ids.tvdb;
-    }
     if (!merged.simkl && ids.simkl) {
       merged.simkl = ids.simkl;
     }
@@ -196,10 +185,6 @@ export function buildCanonicalId(ids: ExternalIds, fallback?: string): string | 
 
   if (ids.trakt) {
     return `trakt:${ids.trakt}`;
-  }
-
-  if (ids.tvdb) {
-    return `tvdb:${ids.tvdb}`;
   }
 
   if (ids.simkl) {

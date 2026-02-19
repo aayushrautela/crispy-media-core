@@ -95,15 +95,6 @@ function extractIds(value: unknown): ExternalIds {
     ids.tmdb = Math.trunc(tmdb);
   }
 
-  const tvdb = typeof raw.tvdb === 'number'
-    ? raw.tvdb
-    : typeof raw.tvdb === 'string'
-      ? Number.parseInt(raw.tvdb.trim(), 10)
-      : NaN;
-  if (Number.isFinite(tvdb) && tvdb > 0) {
-    ids.tvdb = Math.trunc(tvdb);
-  }
-
   const imdb = normalizeImdbId(typeof raw.imdb === 'string' ? raw.imdb : undefined);
   if (imdb) {
     ids.imdb = imdb;
